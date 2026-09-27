@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Bell, CalendarCheck, LayoutDashboard, Megaphone } from 'lucide-react';
 import { DashboardShell } from '../../components/dashboard-shell';
+import { opsNav } from '../../components/ops-nav';
 import { NotificationCenter } from '../../components/notifications';
 import { getSession } from '../../lib/auth';
 import { listNotifications, type NotificationItem } from '../../lib/api';
@@ -40,12 +40,7 @@ function StaffNotifications() {
       userName={session?.name}
       userEmail={session?.email ?? ''}
       todayService={`${today.name} — ${today.detail}`}
-      nav={[
-        { label: 'Dashboard', to: '/staff/dashboard', icon: LayoutDashboard },
-        { label: 'Appointments', to: '/staff/appointments', icon: CalendarCheck },
-        { label: 'Announcements', to: '/staff/announcements', icon: Megaphone },
-        { label: 'Notifications', to: '/staff/notifications', icon: Bell },
-      ]}
+      nav={opsNav(session?.role)}
       notificationsTo="/staff/notifications"
     >
       <motion.div

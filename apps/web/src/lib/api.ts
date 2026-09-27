@@ -87,6 +87,21 @@ export function listServices(): Promise<{ services: Service[] }> {
   return apiFetch('/api/services');
 }
 
+export interface ServiceInput {
+  name: string;
+  description?: string;
+  schedule: ServiceSchedule;
+  active?: boolean;
+}
+
+export function createService(input: ServiceInput): Promise<{ service: Service }> {
+  return apiFetch('/api/services', { method: 'POST', body: input });
+}
+
+export function updateService(id: string, input: Partial<ServiceInput>): Promise<{ service: Service }> {
+  return apiFetch(`/api/services/${id}`, { method: 'PATCH', body: input });
+}
+
 export function validDates(serviceId: string, days = 30): Promise<{ dates: string[] }> {
   return apiFetch(`/api/services/${serviceId}/valid-dates?days=${days}`);
 }
@@ -208,4 +223,132 @@ export function markNotificationRead(id: string): Promise<{ notification: Notifi
 
 export function markAllNotificationsRead(): Promise<{ success: boolean }> {
   return apiFetch('/api/notifications/read-all', { method: 'POST' });
+}
+
+export interface WalkInNewPatient {
+  fullName: string;
+  email: string;
+  birthdate: string;
+  sex: 'Female' | 'Male' | 'Other' | 'Prefer not to say';
+  address: string;
+  householdNumber: string;
+  contactNumber: string;
+  philHealthNumber?: string;
+  emergencyName: string;
+  emergencyNumber: string;
+}
+
+export function lookupPatient(email: string): Promise<{ patient: { id: string; name: string; email: string } }> {
+  return apiFetch(`/api/appointments/lookup-patient?email=${encodeURIComponent(email)}`);
+}
+
+export function walkInAppointment(input: {
+  serviceId: string;
+  day: string;
+  timePreference?: string;
+  notes?: string;
+  patientEmail?: string;
+  newPatient?: WalkInNewPatient;
+}): Promise<{ appointment: StaffAppointment; tempPassword?: string }> {
+  return apiFetch('/api/appointments/walk-in', { method: 'POST', body: input });
+}
+
+export interface PatientSummary {
+  id: string;
+  name: string;
+  email: string;
+  contactNumber: string;
+  householdNumber: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface PatientVisit {
+  id: string;
+  service: { id: string; name: string } | string;
+  day: string;
+  status: StaffAppointment['status'];
+  diagnosis: string;
+  prescription: string;
+  visitNotes: string;
+  createdAt: string;
+}
+
+export interface PatientDetail {
+  id: string;
+  name: string;
+  email: string;
+  birthdate: string;
+  sex: string;
+  address: string;
+  householdNumber: string;
+  contactNumber: string;
+  philHealthNumber: string;
+  emergencyName: string;
+  emergencyNumber: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export function listPatients(search = ''): Promise<{ patients: PatientSummary[] }> {
+  const qs = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+  return apiFetch(`/api/patients${qs}`);
+}
+
+export function getPatient(id: string): Promise<{ patient: PatientDetail; visits: PatientVisit[] }> {
+  return apiFetch(`/api/patients/${id}`);
+}
+
+export interface VisitsPerServiceRow {
+  serviceId: string;
+  serviceName: string;
+  count: number;
+}
+
+export function visitsPerService(days = 30): Promise<{
+  from: string;
+  to: string;
+  days: number;
+  total: number;
+  rows: VisitsPerServiceRow[];
+}> {
+  return apiFetch(`/api/reports/visits-per-service?days=${days}`);
+}
+
+export function overview(): Promise<{
+  today: number;
+  pending: number;
+  totalPatients: number;
+  activeStaff?: number;
+}> {
+  return apiFetch('/api/reports/overview');
+}
+
+export interface StaffAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: 'staff' | 'admin';
+  active: boolean;
+  createdAt: string;
+}
+
+export function listStaffAccounts(): Promise<{ accounts: StaffAccount[] }> {
+  return apiFetch('/api/staff-accounts');
+}
+
+export function createStaffAccount(input: {
+  fullName: string;
+  email: string;
+  password: string;
+  role?: 'staff' | 'admin';
+}): Promise<{ account: StaffAccount }> {
+  return apiFetch('/api/staff-accounts', { method: 'POST', body: input });
+}
+
+export function updateStaffAccount(
+  id: string,
+  input: Partial<{ fullName: string; role: 'staff' | 'admin'; active: boolean; password: string }>,
+): Promise<{ account: StaffAccount }> {
+  return apiFetch(`/api/staff-accounts/${id}`, { method: 'PATCH', body: input });
 }

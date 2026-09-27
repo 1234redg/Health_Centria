@@ -1,17 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import {
-  Bell,
-  CalendarCheck,
-  CalendarDays,
-  ClipboardList,
-  FileText,
-  LayoutDashboard,
-  Megaphone,
-  Users,
-} from 'lucide-react';
 import { DashboardShell } from '../../components/dashboard-shell';
+import { opsNav } from '../../components/ops-nav';
 import { getSession } from '../../lib/auth';
 import { queueAppointments } from '../../lib/api';
 import { getTodayService } from '../../lib/schedule';
@@ -62,16 +53,7 @@ function StaffDashboard() {
       userName={session?.name}
       userEmail={session?.email ?? ''}
       todayService={`${service.name} — ${service.detail}`}
-      nav={[
-        { label: 'Dashboard', to: '/staff/dashboard', icon: LayoutDashboard },
-        { label: 'Appointments', to: '/staff/appointments', icon: CalendarCheck },
-        { label: 'Patients', icon: Users },
-        { label: 'Walk-in', icon: ClipboardList },
-        { label: 'Services', icon: CalendarDays },
-        { label: 'Announcements', to: '/staff/announcements', icon: Megaphone },
-        { label: 'Notifications', to: '/staff/notifications', icon: Bell },
-        { label: 'Reports', icon: FileText },
-      ]}
+      nav={opsNav(session?.role)}
       notificationsTo="/staff/notifications"
     >
       <motion.div
@@ -116,9 +98,14 @@ function StaffDashboard() {
           Visits per service
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Chart connects when visit records exist. Planned as a simple static bar chart (last 30 days, no filters for
-          v1).
+          Completed visits per service for the last 30 days.
         </p>
+        <Link
+          to="/staff/reports"
+          className="mt-3 inline-flex h-11 items-center rounded-xl border border-slate-300 px-5 font-medium text-slate-700 active:scale-[0.97]"
+        >
+          Open reports
+        </Link>
       </section>
     </DashboardShell>
   );

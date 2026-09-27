@@ -1,8 +1,13 @@
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import { randomBytes } from 'node:crypto';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { Appointment } from '../models/appointment.model.js';
 import { AuditLog } from '../models/audit-log.model.js';
+import { Service } from '../models/service.model.js';
+import { User } from '../models/user.model.js';
+import { hashPassword } from '../utils/password.js';
+import { isValidServiceDay, todayYMD } from '../utils/service-schedule.js';
 import { notifyEmail, notifyUser } from '../utils/notifications.js';
 
 const listQuery = z.object({
@@ -168,4 +173,151 @@ export const completeAppointment = asyncHandler(async (req, res) => {
   }
   await appt.populate([{ path: 'patient', select: 'fullName email' }, { path: 'service', select: 'name' }]);
   res.json({ success: true, appointment: present(appt) });
+});
+
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(7, 'Enter a valid contact number.')
+  .regex(/^[\d+][\d\s\-()]{6,}$/, 'Enter a valid contact number.');
+
+const newPatientSchema = z.object({
+  fullName: z.string().trim().min(1, 'Full name is required.'),
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+  birthdate: z
+    .string()
+    .min(1, 'Birthdate is required.')
+    .refine((v) => !Number.isNaN(new Date(`${v}T00:00:00`).getTime()), 'Enter a valid date.')
+    .refine((v) => new Date(`${v}T00:00:00`).getTime() <= Date.now(), 'Birthdate cannot be in the future.'),
+  sex: z.enum(['Female', 'Male', 'Other', 'Prefer not to say']),
+  address: z.string().trim().min(1, 'Address is required.'),
+  householdNumber: z.string().trim().min(1, 'Household number is required.'),
+  contactNumber: phoneSchema,
+  philHealthNumber: z.string().trim().optional().default(''),
+  emergencyName: z.string().trim().min(1, 'Emergency contact name is required.'),
+  emergencyNumber: phoneSchema,
+});
+
+const walkInSchema = z.object({
+  serviceId: z.string().min(1, 'Service is required.'),
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a valid date.'),
+  timePreference: z.enum(['morning', 'afternoon', 'any']).optional().default('any'),
+  notes: z.string().trim().max(500, 'Notes must be 500 characters or fewer.').optional().default(''),
+  patientEmail: z.string().trim().toLowerCase().email().optional(),
+  newPatient: newPatientSchema.optional(),
+}).refine((v) => v.patientEmail || v.newPatient, {
+  message: 'Provide an existing patient email or new patient details.',
+  path: ['patientEmail'],
+});
+
+function publicPatient(user) {
+  return {
+    id: String(user._id),
+    name: user.fullName,
+    email: user.email,
+  };
+}
+
+export const lookupPatient = asyncHandler(async (req, res) => {
+  if (!requireDB(res)) return;
+  const email = String(req.query.email ?? '').trim().toLowerCase();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+  }
+  const user = await User.findOne({ email }).lean();
+  if (!user || user.role !== 'patient') {
+    return res.status(404).json({ success: false, message: 'No patient found with this email.' });
+  }
+  res.json({ success: true, patient: publicPatient(user) });
+});
+
+export const walkInAppointment = asyncHandler(async (req, res) => {
+  if (!requireDB(res)) return;
+  const parsed = walkInSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Validation failed.', errors: parsed.error.flatten().fieldErrors });
+  }
+  const { serviceId, day, timePreference, notes, patientEmail, newPatient } = parsed.data;
+
+  // Walk-ins are same-day only for v1.
+  const today = todayYMD();
+  if (day !== today) {
+    return res.status(400).json({ success: false, message: 'Walk-ins can only be booked for today.' });
+  }
+
+  const service = await Service.findById(serviceId).lean();
+  if (!service || !service.active) {
+    return res.status(404).json({ success: false, message: 'Service not found.' });
+  }
+  if (!isValidServiceDay(service, day)) {
+    return res.status(400).json({
+      success: false,
+      message: `This service is not offered on ${day}.`,
+    });
+  }
+
+  let patient = null;
+  let tempPassword = null;
+  if (newPatient) {
+    const existing = await User.findOne({ email: newPatient.email }).lean();
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Email is already registered. Use existing patient instead.' });
+    }
+    tempPassword = randomBytes(6).toString('hex');
+    patient = await User.create({
+      email: newPatient.email,
+      passwordHash: await hashPassword(tempPassword),
+      role: 'patient',
+      fullName: newPatient.fullName,
+      birthdate: new Date(`${newPatient.birthdate}T00:00:00`),
+      sex: newPatient.sex,
+      address: newPatient.address,
+      householdNumber: newPatient.householdNumber,
+      contactNumber: newPatient.contactNumber,
+      philHealthNumber: newPatient.philHealthNumber ?? '',
+      emergencyName: newPatient.emergencyName,
+      emergencyNumber: newPatient.emergencyNumber,
+    });
+  } else {
+    patient = await User.findOne({ email: patientEmail, role: 'patient' });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'No patient found with this email.' });
+    }
+  }
+
+  const clash = await Appointment.findOne({
+    patient: patient._id,
+    service: service._id,
+    day,
+    status: { $in: ['pending', 'confirmed'] },
+  }).lean();
+  if (clash) {
+    return res
+      .status(409)
+      .json({ success: false, message: 'This patient already has a request for this service today.' });
+  }
+
+  const appt = await Appointment.create({
+    patient: patient._id,
+    service: service._id,
+    day,
+    date: new Date(`${day}T12:00:00.000Z`),
+    timePreference,
+    notes,
+    status: 'confirmed',
+    createdBy: req.user.id,
+  });
+  await appt.populate([
+    { path: 'patient', select: 'fullName email' },
+    { path: 'service', select: 'name' },
+  ]);
+  await log(req.user.id, 'appointment.walkin', appt, `Walk-in confirmed for ${day}.`);
+
+  res.status(201).json({
+    success: true,
+    appointment: present(appt),
+    ...(tempPassword ? { tempPassword } : {}),
+  });
 });

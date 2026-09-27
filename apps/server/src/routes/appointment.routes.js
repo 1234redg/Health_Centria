@@ -4,7 +4,9 @@ import {
   completeAppointment,
   confirmAppointment,
   declineAppointment,
+  lookupPatient,
   queueAppointments,
+  walkInAppointment,
 } from '../controllers/staff-appointment.controller.js';
 import { requireAuth, requireRole } from '../middleware/requireAuth.js';
 
@@ -17,6 +19,8 @@ appointmentRouter.patch('/:id/cancel', requireAuth, requireRole('patient'), canc
 
 // Staff/admin triage queue.
 appointmentRouter.get('/', requireAuth, requireRole('staff', 'admin'), queueAppointments);
+appointmentRouter.get('/lookup-patient', requireAuth, requireRole('staff', 'admin'), lookupPatient);
+appointmentRouter.post('/walk-in', requireAuth, requireRole('staff', 'admin'), walkInAppointment);
 appointmentRouter.patch('/:id/confirm', requireAuth, requireRole('staff', 'admin'), confirmAppointment);
 appointmentRouter.patch('/:id/decline', requireAuth, requireRole('staff', 'admin'), declineAppointment);
 appointmentRouter.patch('/:id/complete', requireAuth, requireRole('staff', 'admin'), completeAppointment);

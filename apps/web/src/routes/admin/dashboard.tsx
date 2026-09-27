@@ -1,17 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion, useReducedMotion } from 'motion/react';
-import {
-  CalendarCheck,
-  CalendarDays,
-  ClipboardList,
-  FileText,
-  LayoutDashboard,
-  Megaphone,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DashboardShell } from '../../components/dashboard-shell';
+import { opsNav } from '../../components/ops-nav';
 import { getSession } from '../../lib/auth';
+import { overview } from '../../lib/api';
 import { getTodayService } from '../../lib/schedule';
 
 export const Route = createFileRoute('/admin/dashboard')({
@@ -32,6 +25,28 @@ function AdminDashboard() {
   const reduceMotion = useReducedMotion();
   const session = getSession();
   const service = getTodayService();
+  const [counts, setCounts] = useState<{
+    today: number;
+    pending: number;
+    totalPatients: number;
+    activeStaff?: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    overview()
+      .then((r) => {
+        if (!cancelled) setCounts(r);
+      })
+      .catch(() => {
+        if (!cancelled) setCounts(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const v = (n: number | undefined) => (counts === null ? '—' : String(n ?? 0));
 
   return (
     <DashboardShell
@@ -40,16 +55,7 @@ function AdminDashboard() {
       userName={session?.name}
       userEmail={session?.email ?? ''}
       todayService={`${service.name} — ${service.detail}`}
-      nav={[
-        { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
-        { label: 'Appointments', icon: CalendarCheck },
-        { label: 'Patients', icon: Users },
-        { label: 'Walk-in', icon: ClipboardList },
-        { label: 'Services', icon: CalendarDays },
-        { label: 'Announcements', icon: Megaphone },
-        { label: 'Reports', icon: FileText },
-        { label: 'Staff Accounts', icon: Settings },
-      ]}
+      nav={opsNav(session?.role)}
       notificationsTo="/staff/notifications"
     >
       <motion.div
@@ -58,11 +64,33 @@ function AdminDashboard() {
         transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
-        <Kpi label="Today's appointments" value="—" sub="Same daily-ops view as staff" />
-        <Kpi label="Pending requests" value="—" sub="Same triage queue as staff" />
-        <Kpi label="Total patients" value="—" sub="System-wide count (records API)" />
-        <Kpi label="Staff accounts" value="—" sub="Active staff (accounts screen)" />
+        <Kpi label="Today's appointments" value={v(counts?.today)} sub="Confirmed + pending for today" />
+        <Kpi label="Pending requests" value={v(counts?.pending)} sub="Confirm / decline in the queue" />
+        <Kpi label="Total patients" value={v(counts?.totalPatients)} sub="Registered patient accounts" />
+        <Kpi label="Staff accounts" value={v(counts?.activeStaff)} sub="Active staff (accounts screen next)" />
       </motion.div>
+
+      <section
+        aria-labelledby="admin-queue"
+        className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_8px_30px_rgba(15,60,90,0.06)]"
+      >
+        <h2 id="admin-queue" className="text-base font-bold text-slate-900">
+          Triage queue
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          {counts === null
+            ? 'Loading…'
+            : counts.pending === 0
+              ? 'Nothing waiting — the queue is clear.'
+              : `${counts.pending} request${counts.pending === 1 ? '' : 's'} need${counts.pending === 1 ? 's' : ''} review.`}
+        </p>
+        <Link
+          to="/staff/appointments"
+          className="mt-3 inline-flex h-11 items-center rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-5 font-medium text-white active:scale-[0.97]"
+        >
+          Open the queue
+        </Link>
+      </section>
 
       <section
         aria-labelledby="admin-usage"
@@ -72,22 +100,14 @@ function AdminDashboard() {
           Service utilization
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          System-wide chart connects when appointment data exists. Planned as a basic bar/line over time (no
-          filters or drill-downs for v1).
+          Completed visits per service for the last 30 days.
         </p>
-      </section>
-
-      <section
-        aria-labelledby="admin-ops"
-        className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_8px_30px_rgba(15,60,90,0.06)]"
-      >
-        <h2 id="admin-ops" className="text-base font-bold text-slate-900">
-          Administration
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Staff accounts, audit logs, roles (read-only), and security settings land here next. Admins can already
-          reach every staff view through role access.
-        </p>
+        <Link
+          to="/staff/reports"
+          className="mt-3 inline-flex h-11 items-center rounded-xl border border-slate-300 px-5 font-medium text-slate-700 active:scale-[0.97]"
+        >
+          Open reports
+        </Link>
       </section>
     </DashboardShell>
   );

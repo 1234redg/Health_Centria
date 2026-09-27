@@ -1,15 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Bell,
-  CalendarCheck,
-  CalendarDays,
-  LayoutDashboard,
-  LoaderCircle,
-  Megaphone,
-} from 'lucide-react';
+import { CalendarDays, LoaderCircle } from 'lucide-react';
 import { DashboardShell } from '../../components/dashboard-shell';
+import { opsNav } from '../../components/ops-nav';
 import { getSession } from '../../lib/auth';
 import {
   ApiError,
@@ -361,12 +355,7 @@ function StaffQueue() {
       userName={session?.name}
       userEmail={session?.email ?? ''}
       todayService={`${today.name} — ${today.detail}`}
-      nav={[
-        { label: 'Dashboard', to: '/staff/dashboard', icon: LayoutDashboard },
-        { label: 'Appointments', to: '/staff/appointments', icon: CalendarCheck },
-        { label: 'Announcements', to: '/staff/announcements', icon: Megaphone },
-        { label: 'Notifications', to: '/staff/notifications', icon: Bell },
-      ]}
+      nav={opsNav(session?.role)}
       notificationsTo="/staff/notifications"
     >
       <motion.div
