@@ -1,0 +1,17 @@
+{
+  "name": "healthcentria",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "dev:server": "pnpm --filter @healthcentria/server dev",
+    "dev:web": "pnpm --filter @healthcentria/web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

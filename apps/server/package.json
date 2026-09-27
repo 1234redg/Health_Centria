@@ -1,0 +1,27 @@
+{
+  "name": "@healthcentria/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build": "echo \"server: no build step (plain JS)\"",
+    "seed:user": "node src/scripts/seed-user.js",
+    "seed:services": "node src/scripts/seed-services.js",
+    "reminders": "node src/scripts/send-reminders.js",
+    "typecheck": "node --check src/index.js",
+    "lint": "node --check src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.9.0",
+    "morgan": "^1.10.0",
+    "resend": "^6.30.0",
+    "zod": "^3.23.8"
+  }
+}
