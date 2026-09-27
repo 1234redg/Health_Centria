@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { DashboardShell } from '../../components/dashboard-shell';
 import { patientNav } from '../../components/patient-nav';
+import { VisitsDemoChart } from '../../components/visits-demo-chart';
 import { getSession } from '../../lib/auth';
 import { myAppointments, type Appointment } from '../../lib/api';
 import { getTodayService } from '../../lib/schedule';
@@ -114,6 +115,19 @@ function PatientDashboard() {
             </Link>
           </div>
         )}
+      </section>
+
+      <section
+        aria-labelledby="patient-visits"
+        className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_8px_30px_rgba(15,60,90,0.06)]"
+      >
+        <h2 id="patient-visits" className="text-base font-bold text-slate-900">
+          Weekly visits
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">Demo AreaChart from Bklit UI</p>
+        <div className="mt-4">
+          <VisitsDemoChart />
+        </div>
       </section>
 
       <div className="grid gap-5 md:grid-cols-2">
