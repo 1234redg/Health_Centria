@@ -30,7 +30,7 @@ function PublicAnnouncements() {
       <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-3 px-4 sm:px-6">
           <Link to="/" className="text-lg font-bold tracking-tight text-slate-900">
-            HealthCentria
+            E-Kalinga
           </Link>
           <nav aria-label="Public" className="ml-auto flex items-center gap-2 text-sm">
             <Link to="/login" className="rounded-xl px-3 py-2 font-medium text-slate-600 hover:bg-slate-100">
