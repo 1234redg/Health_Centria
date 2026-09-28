@@ -9,7 +9,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16, 'JWT_SECRET is required (min 16 chars) — generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM: z.string().default('HealthCentria <onboarding@resend.dev>'),
+  RESEND_FROM: z.string().default('E-Kalinga <onboarding@resend.dev>'),
 });
 
 export const env = envSchema.parse(process.env);

@@ -29,7 +29,7 @@ function SidebarBody({ nav, roleLabel, todayService }: Pick<DashboardShellProps,
   return (
     <div className="flex h-full flex-col">
       <div className="px-5 pb-4 pt-6">
-        <p className="text-lg font-bold tracking-tight text-slate-900">HealthCentria</p>
+        <p className="text-lg font-bold tracking-tight text-slate-900">E-Kalinga</p>
         <p className="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800">
           {roleLabel}
         </p>

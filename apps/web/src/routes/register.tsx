@@ -148,7 +148,7 @@ function RegisterComponent() {
         aria-labelledby="register-heading"
         className="w-full max-w-[720px] rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_8px_30px_rgba(15,60,90,0.08)] sm:p-8"
       >
-        <p className="text-sm font-medium text-teal-700">HealthCentria</p>
+        <p className="text-sm font-medium text-teal-700">E-Kalinga</p>
         <h1 id="register-heading" className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
           Create a patient account
         </h1>

@@ -3,19 +3,16 @@
 Binding for all development. Do not introduce other runtimes, languages, or databases without updating this file.
 
 ## Runtime / Language
-- Runtime: Node.js (LTS, tested on v24.21.0)
-- Language: JavaScript (ESM, `"type": "module"`). No TypeScript on server.
+- Runtime: Node.js (LTS)
+- Language: JavaScript 
 
 ## Backend (`apps/server`)
-- Framework: Express `^4.21.2` (plain JS)
+- Framework: Express `^4.21.2`
 - ODM: Mongoose `^8.9.0`
 - Validation: Zod `^3.23.8`
-- Auth: `jsonwebtoken` (sessions as signed JWT, `Authorization: Bearer`; ESM-compatible via default import)
-- Email: `resend` (per-post announcement emails + appointment notifications; skipped gracefully without a key)
-- Password hashing: Node built-in `crypto` scrypt (no extra dep)
 - Middleware in use: cors, helmet, morgan, dotenv
-- Entry: `apps/server/src/index.js` -> `app.js`
-- Scripts: `dev` (node --watch), `start` (node src/index.js). No `build` — runs directly from source.
+- Entry: `apps/server/src/index.ts` -> `app.ts`
+- Scripts: `dev` (tsx watch), `build` (tsc), `start` (node dist/index.js)
 
 ## Database
 - MongoDB Atlas (cloud)
@@ -28,7 +25,6 @@ Binding for all development. Do not introduce other runtimes, languages, or data
 
 ## Constraints
 1. Backend stays Node.js + Express only.
-2. Database stays MongoDB Atlas only.
+2. Database stays MongoDB Atlas onlydonx
 3. No Python, PHP, MySQL/Postgres, or other ORM unless this file is updated.
 4. All new backend deps must work with Node.js + ESM (`"type": "module"`).
-5. Session strategy: stateless JWT (7-day expiry) issued at login/register; `requireAuth`/`requireRole` middleware guards role routes.

@@ -1,4 +1,4 @@
-# HealthCentria
+# E-Kalinga
 
 Monorepo (pnpm workspaces):
 
